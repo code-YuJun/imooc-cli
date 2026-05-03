@@ -28,6 +28,7 @@ let config;
 async function cli() {
   try {
     await prepare();
+    // 注册指令
     registerCommand();
   } catch (e) {
     log.error(e.message);
@@ -230,6 +231,7 @@ function cleanAll() {
 }
 
 async function prepare() {
+  // 打印当前 core 包的版本
   checkPkgVersion(); // 检查当前运行版本
   checkNodeVersion(); // 检查 node 版本
   checkRoot(); // 检查是否为 root 启动
@@ -248,11 +250,15 @@ async function checkGlobalUpdate() {
                 更新命令： npm install -g ${NPM_NAME}`));
   }
 }
-
+// 用户可通过 .env 自定义配置，无需修改代码，没有 .env 文件时使用默认值，不影响现有功能
+// 很多的配置，不适合直接在代码中配置，适合使用环境变量来配置，如 密码、密钥等敏感信息
+// 检查并初始化 CLI 工具的环境变量配置
 function checkEnv() {
   log.verbose('开始检查环境变量');
   const dotenv = require('dotenv');
+  // 读取环境变量
   dotenv.config({
+    // 从用户主目录加载环境变量env文件
     path: path.resolve(userHome, '.env'),
   });
   config = createCliConfig(); // 准备基础配置
@@ -263,6 +269,8 @@ function createCliConfig() {
   const cliConfig = {
     home: userHome,
   };
+  // 如果环境变量 CLI_HOME 存在，使用自定义路径： ~/<CLI_HOME>
+  // 否则使用默认路径： ~/.imooc-cli
   if (process.env.CLI_HOME) {
     cliConfig['cliHome'] = path.join(userHome, process.env.CLI_HOME);
   } else {
