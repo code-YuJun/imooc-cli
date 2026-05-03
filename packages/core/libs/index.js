@@ -6,6 +6,10 @@ const colors = require('colors/safe');
 const userHome = require('user-home');
 const semver = require('semver');
 const { log, npm, Package, exec, locale } = require('@imooc-cli/utils');
+// require 支持：.js/.json
+// 如果 .js -> 必须是一个 commonjs 模块
+// 如果 .json -> 解析 json 字符串
+// 如果是其他后缀 -> 当作 js 代码解析，如果文件里面写的不是 js 代码，会报错
 const packageConfig = require('../package');
 const add = require('@imooc-cli/add')
 
