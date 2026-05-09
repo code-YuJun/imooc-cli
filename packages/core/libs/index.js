@@ -3,13 +3,10 @@ const path = require('path');
 const fse = require('fs-extra');
 const program = require('commander');
 const colors = require('colors/safe');
+// 获取当前用户的 home 目录路径
 const userHome = require('user-home');
 const semver = require('semver');
 const { log, npm, Package, exec, locale } = require('@imooc-cli/utils');
-// require 支持：.js/.json
-// 如果 .js -> 必须是一个 commonjs 模块
-// 如果 .json -> 解析 json 字符串
-// 如果是其他后缀 -> 当作 js 代码解析，如果文件里面写的不是 js 代码，会报错
 const packageConfig = require('../package');
 const add = require('@imooc-cli/add')
 
@@ -231,36 +228,51 @@ function cleanAll() {
 }
 
 async function prepare() {
-  // 打印当前 core 包的版本
-  checkPkgVersion(); // 检查当前运行版本
-  checkNodeVersion(); // 检查 node 版本
-  checkRoot(); // 检查是否为 root 启动
-  checkUserHome(); // 检查用户主目录
-  checkInputArgs(); // 检查用户输入参数
-  checkEnv(); // 检查环境变量
-  await checkGlobalUpdate(); // 检查工具是否需要更新
+  // 打印当前 core 包的版本 & 欢迎信息
+  checkPkgVersion();
+  // 检查 node 版本
+  checkNodeVersion();
+  // 检查是否为 root 启动
+  checkRoot();
+  // 检查用户主目录
+  checkUserHome();
+  // 检查用户输入参数
+  checkInputArgs();
+  // 检查环境变量
+  checkEnv();
+  // 检查当前脚手架是否需要更新
+  await checkGlobalUpdate();
 }
 
 async function checkGlobalUpdate() {
   log.verbose('检查 imooc-cli 最新版本');
   const currentVersion = packageConfig.version;
+  // 获取最新版本
   const lastVersion = await npm.getNpmLatestSemverVersion(NPM_NAME, currentVersion);
   if (lastVersion && semver.gt(lastVersion, currentVersion)) {
     log.warn(colors.yellow(`请手动更新 ${NPM_NAME}，当前版本：${packageConfig.version}，最新版本：${lastVersion}
                 更新命令： npm install -g ${NPM_NAME}`));
   }
 }
+
 // 用户可通过 .env 自定义配置，无需修改代码，没有 .env 文件时使用默认值，不影响现有功能
 // 很多的配置，不适合直接在代码中配置，适合使用环境变量来配置，如 密码、密钥等敏感信息
-// 检查并初始化 CLI 工具的环境变量配置
+/**
+ * 比如项目根目录有一个 .env 文件：
+ * NODE_ENV=development
+ * API_BASE_URL=http://localhost:3000
+ * PORT=8080
+ */
 function checkEnv() {
   log.verbose('开始检查环境变量');
+  // 读取 .env 文件里的环境变量，并加载到 process.env 中
   const dotenv = require('dotenv');
   // 读取环境变量
   dotenv.config({
-    // 从用户主目录加载环境变量env文件
+    // 从用户主目录加载环境变量 env 文件
     path: path.resolve(userHome, '.env'),
   });
+  // ～～ 此时 process.env 上有 NODE_ENV、API_BASE_URL、PORT 等环境变量 ～～
   config = createCliConfig(); // 准备基础配置
   log.verbose('环境变量', config);
 }
@@ -278,7 +290,11 @@ function createCliConfig() {
   }
   return cliConfig;
 }
-
+/**
+ * minimist 解析命令行参数
+ * 正常模式：imooc-cli init （info级别，只显示重要信息）
+ * 调试模式：imooc-cli init --debug （verbose级别，显示所有信息）
+ */
 function checkInputArgs() {
   log.verbose('开始校验输入参数');
   const minimist = require('minimist');
@@ -289,26 +305,36 @@ function checkInputArgs() {
 
 function checkArgs(args) {
   if (args.debug) {
+    // 额外显示 verbose 的调试信息
     process.env.LOG_LEVEL = 'verbose';
   } else {
+    // 只显示 success、error、notice 等关键信息
     process.env.LOG_LEVEL = 'info';
   }
   log.level = process.env.LOG_LEVEL;
 }
 
+// 如果用户主目录不存在，后续的配置文件读写、缓存存储等操作都会失败。后面要用到
 function checkUserHome() {
+  // 跨平台获取当前系统登录用户的根目录
   if (!userHome || !fs.existsSync(userHome)) {
     throw new Error(colors.red('当前登录用户主目录不存在！'));
   }
 }
 
 function checkRoot() {
+  // 检测当前程序是否是以 root（管理员）权限运行，并在必要时尝试进行“降权”处理。
+  // 以 root 权限运行 Node.js 脚本有时会带来安全隐患
+  // 当它发现你正在使用 root 权限运行时，它会尝试将当前进程的 uid，切换回普通用户模式
   const rootCheck = require('root-check');
   rootCheck(colors.red('请避免使用 root 账户启动本应用'));
 }
 
+// 检查 node 版本
 function checkNodeVersion() {
   const semver = require('semver');
+  // gte 检查当前 node 版本是否大于等于 LOWEST_NODE_VERSION，如果小于 LOWEST_NODE_VERSION，抛出错误
+  // process.version 正在运行的 Node.js 版本号
   if (!semver.gte(process.version, LOWEST_NODE_VERSION)) {
     throw new Error(colors.red(`imooc-cli 需要安装 v${LOWEST_NODE_VERSION} 以上版本的 Node.js`));
   }
@@ -316,5 +342,6 @@ function checkNodeVersion() {
 
 function checkPkgVersion() {
   log.notice('cli', packageConfig.version);
+  // 获取 中文 / 英文环境 的配置
   log.success(locale.welcome);
 }

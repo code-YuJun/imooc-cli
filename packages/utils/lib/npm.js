@@ -1,8 +1,11 @@
+// HTTP 请求库，用于调用 npm registry API
 const axios = require('axios');
+// URL 拼接工具，处理路径拼接
 const urlJoin = require("url-join");
+// 语义化版本号处理库
 const semver = require("semver");
 
-// 获取 registry 信息
+// 获取 npm registry 地址
 function getNpmRegistry(isOriginal = false) {
   return isOriginal ? 'https://registry.npmjs.org' :
     'https://registry.npm.taobao.org';
