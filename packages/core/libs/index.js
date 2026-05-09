@@ -31,7 +31,7 @@ async function cli() {
     log.error(e.message);
   }
 }
-
+// 注册指令
 function registerCommand() {
   program.version(packageConfig.version).usage('<command> [options]');
 
@@ -146,11 +146,18 @@ function registerCommand() {
         cleanAll();
       }
     });
-
+  /**
+   * 注册一个全局选项 --debug，用于开启调试模式
+   * .parse(process.argv) ：解析命令行参数（如 imooc-cli init --debug ），触发对应的 action 回调
+   */
   program
     .option('--debug', '打开调试模式')
     .parse(process.argv);
-
+  
+  /**
+   * args._.length < 1 ：检查用户是否输入了子命令（如 init 、 publish 等）
+   * 如果没有输入任何命令，输出帮助信息
+   */
   if (args._.length < 1) {
     program.outputHelp();
     console.log();
@@ -238,7 +245,7 @@ async function prepare() {
   checkUserHome();
   // 检查用户输入参数
   checkInputArgs();
-  // 检查环境变量
+  // 检查/加载 环境变量
   checkEnv();
   // 检查当前脚手架是否需要更新
   await checkGlobalUpdate();

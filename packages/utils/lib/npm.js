@@ -14,6 +14,7 @@ function getNpmRegistry(isOriginal = false) {
 // 从 registry 获取 npm 的信息
 function getNpmInfo(npm, registry) {
   const register = registry || getNpmRegistry();
+  //  拼接 registry 地址和 npm 包名，形成完整的 API 地址
   const url = urlJoin(register, npm);
   return axios.get(url).then(function(response) {
     try {
@@ -48,6 +49,7 @@ function getVersions(npm, registry) {
 
 // 根据指定 version 获取符合 semver 规范的最新版本号
 function getLatestSemverVersion(baseVersion, versions) {
+  // 排序的目的是：确保返回的版本号是符合 semver 规范的最新版本
   versions = versions
     .filter(function (version) { return semver.satisfies(version, "^" + baseVersion); })
     .sort(function (a, b) {
@@ -56,7 +58,7 @@ function getLatestSemverVersion(baseVersion, versions) {
   return versions[0];
 }
 
-// 根据指定 version 和包名获取符合 semver 规范的最新版本号
+// 入口：根据指定 version 和包名获取符合 semver 规范的最新版本号
 function getNpmLatestSemverVersion(npm, baseVersion, registry) {
   return getVersions(npm, registry).then(function (versions) {
     return getLatestSemverVersion(baseVersion, versions);
