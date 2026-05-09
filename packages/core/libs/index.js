@@ -153,7 +153,6 @@ function registerCommand() {
   program
     .option('--debug', '打开调试模式')
     .parse(process.argv);
-  
   /**
    * args._.length < 1 ：检查用户是否输入了子命令（如 init 、 publish 等）
    * 如果没有输入任何命令，输出帮助信息
@@ -164,6 +163,11 @@ function registerCommand() {
   }
 }
 
+/**
+ * @param {*} param0 包路径、包名、包版本
+ * @param {*} extraOptions 额外选项：根据子命令不同，需要传递不同的额外选项
+ * init：execCommand({ packagePath, packageName, packageVersion }, { type, force }); type:项目类型(如 react、vue); force是否强制覆盖现有文件; packagePath ：可选的自定义包路径
+ */
 async function execCommand({ packagePath, packageName, packageVersion }, extraOptions) {
   let rootFile;
   try {
